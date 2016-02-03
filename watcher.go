@@ -11,15 +11,20 @@ import (
 	"github.com/andreaskoch/go-fswatch"
 )
 
+var buildFolder = "build/"
+
 // Constants
 const (
     checkIntervalInSeconds = 2
     templateToken = "#>>"
-    buildFolder = "build/"
 )
 
 // Start watcher
 func Start(templateFolder string) {
+
+	// Force building at startup
+	buildTemplates(os.Args[1])
+
 
     recurse := true // include all sub directories
 
@@ -60,7 +65,7 @@ func Start(templateFolder string) {
 // Execute main
 func executeFile(path string, folder string) string {
 
-	fmt.Println("Executing: " + path)
+	fmt.Println("Building " + path + "...")
  	file, _ := os.Open(path)
 
     var buffer bytes.Buffer
@@ -129,18 +134,19 @@ func isFile(path string) bool {
 
 func buildTemplates(templateFolder string) {
 
+	fmt.Println("Building...")
 	// Go throuch each template
-	files, _ := filepath.Glob(templateFolder + "/*")
+	files, _ := filepath.Glob(templateFolder + "*")
 	fmt.Println(files)
 	
 	// Create output folder
-	os.MkdirAll(buildFolder + templateFolder, 0777)
+	os.Mkdir(buildFolder, 0777)
 
 	for i := 0; i < len(files); i++ {
 		if isFile(files[i]) {
 			content := executeFile(files[i], templateFolder)
 
-			f, err := os.Create(buildFolder + files[i])
+			f, err := os.Create(buildFolder + filepath.Base(files[i]))
 
 			if err != nil {
 			 	fmt.Println(err)
@@ -157,12 +163,16 @@ func buildTemplates(templateFolder string) {
 		}
 	}
 
-
-
+	fmt.Println("Build complete!")
 
 }
 
 func main() {
+
+	if len(os.Args) > 2 {
+		buildFolder = os.Args[2]
+		fmt.Println("Folder changed to: " + buildFolder)
+	}
 
 	Start(os.Args[1])
 
